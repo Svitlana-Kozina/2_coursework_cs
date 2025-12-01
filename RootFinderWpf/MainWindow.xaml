@@ -1,0 +1,177 @@
+﻿<Window x:Class="RootFinderWpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        Title="Root Finder - Chord Method"
+        Height="800" Width="1500"
+        Background="#F4F7FB"
+        WindowStartupLocation="CenterScreen">
+
+    <!-- ========= ОСНОВНИЙ КОНТЕЙНЕР ========= -->
+    <DockPanel>
+
+        <!-- ======================= MENU BAR ======================= -->
+        <Menu DockPanel.Dock="Top" Background="#E8EEF7">
+
+            <!-- FILE -->
+            <MenuItem Header="_File">
+
+                <MenuItem Header="Load data from XML..."
+                          Click="Menu_LoadXml_Click"/>
+
+                <MenuItem Header="Save data to XML..."
+                          Click="Menu_SaveXml_Click"/>
+
+                <Separator/>
+
+                <MenuItem Header="Exit"
+                          Click="Menu_Exit_Click"/>
+            </MenuItem>
+
+            <!-- REPORTS -->
+            <MenuItem Header="_Reports">
+                <MenuItem Header="Save HTML report..."
+                          Click="Menu_SaveHtml_Click"/>
+                <MenuItem Header="Save plot as PNG..."
+                          Click="Menu_SavePlotPng_Click"/>
+                <MenuItem Header="Save Plot as SVG" 
+                          Click="Menu_SaveSvg_Click"/>
+            </MenuItem>
+
+            <!-- HELP -->
+            <MenuItem Header="_Help">
+
+                <MenuItem Header="User Guide"
+                          Click="Menu_HelpGuide_Click"/>
+
+                <MenuItem Header="About"
+                          Click="Menu_HelpAbout_Click"/>
+
+                <MenuItem Header="Support"
+                          Click="Menu_HelpSupport_Click"/>
+
+            </MenuItem>
+        </Menu>
+
+
+        <!-- ==================== TOP BLUE TITLE BAR ==================== -->
+        <Border DockPanel.Dock="Top"
+                Background="#4A90E2"
+                Padding="10">
+            <TextBlock Text="Root Finder - Chord Method  f(x) = g(x)"
+                       Foreground="White"
+                       FontSize="18"
+                       FontWeight="Bold"/>
+        </Border>
+
+
+        <!-- ==================== MAIN GRID: LEFT PANEL + PLOT ==================== -->
+        <Grid Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="350"/>
+                <!-- LEFT CONTROLS -->
+                <ColumnDefinition Width="*"/>
+                <!-- PLOT AREA -->
+            </Grid.ColumnDefinitions>
+
+            <!-- ========== LEFT PANEL ========== -->
+            <StackPanel Grid.Column="0" Margin="0 0 10 0">
+
+                <!-- Polynomial -->
+                <Border Background="White" CornerRadius="10" Padding="10" Margin="0 0 0 10">
+                    <StackPanel>
+                        <TextBlock Text="Polynomial f(x) coefficients:" FontWeight="Bold"/>
+                        <TextBlock Text="Enter coefficients from highest degree to constant term."
+                                   FontSize="11" Foreground="#555"/>
+                        <TextBox x:Name="TxtPolynomial"
+                                 Height="32"
+                                 Padding="6"
+                                 BorderBrush="#4A90E2"
+                                 BorderThickness="1"
+                                 Background="#F9FBFF"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Interval -->
+                <Border Background="White" CornerRadius="10" Padding="10" Margin="0 0 0 10">
+                    <StackPanel>
+                        <TextBlock Text="Interval and settings:" FontWeight="Bold"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0 5 0 0">
+                            <TextBlock Text="xmin:" Width="50"/>
+                            <TextBox x:Name="TxtXMin" Width="80"/>
+                            <TextBlock Text="xmax:" Width="50" Margin="10 0 0 0"/>
+                            <TextBox x:Name="TxtXMax" Width="80"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0 5 0 0">
+                            <TextBlock Text="step:" Width="50"/>
+                            <TextBox x:Name="TxtStep" Width="80"/>
+                            <TextBlock Text="eps:" Width="50" Margin="10 0 0 0"/>
+                            <TextBox x:Name="TxtEps" Width="80"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- g(x) Table -->
+                <Border Background="White" CornerRadius="10" Padding="10" Margin="0 0 0 10">
+                    <StackPanel>
+                        <TextBlock Text="g(x) points:" FontWeight="Bold"/>
+                        <DataGrid x:Name="PointsGrid"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="True"
+                                  CanUserDeleteRows="True"
+                                  HeadersVisibility="Column"
+                                  RowHeaderWidth="0"
+                                  BorderBrush="#4A90E2"
+                                  BorderThickness="1"
+                                  Height="150">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="X" Binding="{Binding X}" Width="*"/>
+                                <DataGridTextColumn Header="Y" Binding="{Binding Y}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Buttons -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button x:Name="BtnFindRoots"
+                            Content="Find roots"
+                            Width="120" Height="34"
+                            Background="#4A90E2" Foreground="White"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Click="BtnFindRoots_Click"/>
+                    <Button x:Name="BtnClear"
+                            Content="Clear"
+                            Width="120" Height="34"
+                            Margin="10 0 0 0"
+                            Background="#4A90E2" Foreground="White"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Click="BtnClear_Click"/>
+                </StackPanel>
+
+                <!-- Roots -->
+                <TextBlock Text="Roots:" Margin="0 10 0 4" FontWeight="Bold"/>
+                <ListBox x:Name="RootsList"
+                         Height="130"
+                         BorderBrush="#4A90E2"
+                         BorderThickness="1"
+                         Background="#F9FBFF"/>
+            </StackPanel>
+
+
+            <!-- ========== RIGHT PANEL: PLOT ========== -->
+            <Border Grid.Column="1"
+                    Background="White"
+                    CornerRadius="10"
+                    Padding="10">
+                <oxy:PlotView x:Name="Plot" Model="{Binding}"/>
+            </Border>
+
+        </Grid>
+
+    </DockPanel>
+</Window>

@@ -3,12 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{5E4252D6-57AC-4EE0-85BB-A65D90D4D2DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{5E4252D6-57AC-4EE0-85BB-A65D90D4D2DC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DDB9B758-1FC0-43BB-93B0-99E5DF563C7F} = {DDB9B758-1FC0-43BB-93B0-99E5DF563C7F}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RootFinderLib", "RootFinderLib\RootFinderLib.csproj", "{DDB9B758-1FC0-43BB-93B0-99E5DF563C7F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RootFinderLib", "RootFinderLib\RootFinderLib.csproj", "{DDB9B758-1FC0-43BB-93B0-99E5DF563C7F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RootFinderWpf", "RootFinderWpf\RootFinderWpf.csproj", "{97D72FC2-0A6E-42AE-8C9F-69104CD2DF77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +26,10 @@ Global
 		{DDB9B758-1FC0-43BB-93B0-99E5DF563C7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDB9B758-1FC0-43BB-93B0-99E5DF563C7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DDB9B758-1FC0-43BB-93B0-99E5DF563C7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97D72FC2-0A6E-42AE-8C9F-69104CD2DF77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97D72FC2-0A6E-42AE-8C9F-69104CD2DF77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97D72FC2-0A6E-42AE-8C9F-69104CD2DF77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97D72FC2-0A6E-42AE-8C9F-69104CD2DF77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
