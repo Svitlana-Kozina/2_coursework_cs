@@ -117,8 +117,28 @@ namespace RootFinderWpf
             });
 
             //Осі
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "x" });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "y" });
+            //model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "x" });
+            //model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "y" });
+
+            model.Axes.Add(new LinearAxis
+            {
+                Position = AxisPosition.Bottom,
+                Title = "x",
+                MajorGridlineStyle = LineStyle.Solid,
+                MajorGridlineColor = OxyColor.FromRgb(220, 220, 220),
+                MinorGridlineStyle = LineStyle.Dot,
+                MinorGridlineColor = OxyColor.FromRgb(235, 235, 235)
+            });
+
+            model.Axes.Add(new LinearAxis
+            {
+                Position = AxisPosition.Left,
+                Title = "y",
+                MajorGridlineStyle = LineStyle.Solid,
+                MajorGridlineColor = OxyColor.FromRgb(220, 220, 220),
+                MinorGridlineStyle = LineStyle.Dot,
+                MinorGridlineColor = OxyColor.FromRgb(235, 235, 235)
+            });
 
             //f(x)
             var seriesF = new LineSeries
