@@ -5,56 +5,51 @@ using RootFinderLib.Models;
 namespace RootFinderLib.Services
 {
     /// <summary>
-    /// Сервіс пошуку всіх коренів на інтервалі [xmin, xmax]
-    /// шляхом сканування інтервалу дрібними кроками
-    /// та запуску методу хорд на кожному знайденому підвідрізку зі зміною знаку.
-    /// Також знаходить корені, коли φ(x)=0 в точці.
+    /// Сканує інтервал і знаходить усі корені функції func(x) = 0.
+    /// Використовує стратегію IRootSolver.
     /// </summary>
-    public static class RootSearchService
+    public class RootSearchService
     {
-        public static List<double> FindAllRoots(
-            FunctionBase f,
-            FunctionBase g,
+        private readonly IRootSolver solver;
+
+        public RootSearchService(IRootSolver rootSolver)
+        {
+            solver = rootSolver;
+        }
+
+        public List<double> FindAllRoots(
+            FunctionBase func,
             double xmin,
             double xmax,
             double step,
             double eps)
         {
             List<double> roots = new List<double>();
-            ChordSolver solver = new ChordSolver(f, g);
 
             double xLeft = xmin;
             double xRight = xLeft + step;
 
-            // Основний цикл по інтервалу
             while (xRight <= xmax + 1e-12)
             {
-                double f1 = f.Evaluate(xLeft) - g.Evaluate(xLeft);
-                double f2 = f.Evaluate(xRight) - g.Evaluate(xRight);
+                double f1 = func.Evaluate(xLeft);
+                double f2 = func.Evaluate(xRight);
 
-                // КОРІНЬ ПРЯМО В ТОЧЦІ xLeft
                 if (Math.Abs(f1) < eps)
-                {
-                    AddRootIfNew(roots, xLeft, eps);
-                }
+                    AddIfNotDuplicate(roots, xLeft, eps);
 
-                // КОРІНЬ ПРЯМО В ТОЧЦІ xRight
                 if (Math.Abs(f2) < eps)
-                {
-                    AddRootIfNew(roots, xRight, eps);
-                }
+                    AddIfNotDuplicate(roots, xRight, eps);
 
-                // Є зміна знаку → запускаємо метод хорд
                 if (f1 * f2 < 0)
                 {
                     try
                     {
                         double root = solver.Solve(xLeft, xRight, eps);
-                        AddRootIfNew(roots, root, eps);
+                        AddIfNotDuplicate(roots, root, eps);
                     }
                     catch
                     {
-                        // Ігноруємо, якщо не зійшлось
+                        // ігноруємо, якщо метод не збігся
                     }
                 }
 
@@ -65,13 +60,10 @@ namespace RootFinderLib.Services
             return roots;
         }
 
-        /// <summary>
-        /// Додає корінь до списку, уникаючи дублювання (близькі значення не повторюються).
-        /// </summary>
-        private static void AddRootIfNew(List<double> roots, double root, double eps)
+        private static void AddIfNotDuplicate(List<double> list, double value, double eps)
         {
-            if (roots.Count == 0 || Math.Abs(root - roots[^1]) > eps)
-                roots.Add(root);
+            if (list.Count == 0 || Math.Abs(list[^1] - value) > eps)
+                list.Add(value);
         }
     }
 }
