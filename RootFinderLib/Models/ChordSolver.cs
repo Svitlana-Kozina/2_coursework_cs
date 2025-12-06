@@ -103,7 +103,6 @@ namespace RootFinderLib.Models
             double f2a = SecondDerivative(a);
             double f2b = SecondDerivative(b);
 
-            // Вибір фіксованої точки (правило правильної випуклості)
             bool fixedIsA;
 
             if (fa * f2a > 0 && fb * f2b <= 0)

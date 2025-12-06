@@ -52,7 +52,7 @@ namespace RootFinderWpf
         {
             try
             {
-                // --- Поліном ---
+                //Поліном
                 double[] coeffs = TxtPolynomial.Text
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries)
                     .Select(double.Parse)
@@ -60,7 +60,7 @@ namespace RootFinderWpf
 
                 var f = new PolynomialFunction(coeffs.ToList());
 
-                // --- g(x) точки ---
+                //g(x) точки
                 if (Points.Count < 2)
                 {
                     MessageBox.Show("Please enter at least 2 points for g(x).",
@@ -72,13 +72,13 @@ namespace RootFinderWpf
                     Points.Select(p => (p.X, p.Y)).ToList()
                 );
 
-                // --- Інтервал ---
+                //Інтервал
                 double xmin = double.Parse(TxtXMin.Text);
                 double xmax = double.Parse(TxtXMax.Text);
                 double step = double.Parse(TxtStep.Text);
                 double eps = double.Parse(TxtEps.Text);
 
-                // --- Пошук коренів ---
+                //Пошук коренів
                 var roots = RootSearchService.FindAllRoots(f, g, xmin, xmax, step, eps);
 
                 RootsList.Items.Clear();
@@ -104,23 +104,23 @@ namespace RootFinderWpf
         private void DrawPlot(FunctionBase f, FunctionBase g, double xmin, double xmax, double step,
                               System.Collections.Generic.List<double> roots)
         {
-            var model = new PlotModel { Title = "Functions and Roots" };
+            var model = new PlotModel { Title = "Functions and Roots f(x) = g(x)" };
 
-            // --- Легенда ---
+            //Легенда
             model.Legends.Add(new Legend
             {
                 LegendPlacement = LegendPlacement.Outside,
-                LegendPosition = LegendPosition.BottomCenter,   // ← легенда внизу по центру
+                LegendPosition = LegendPosition.BottomCenter,   
                 LegendOrientation = LegendOrientation.Horizontal,
                 LegendBackground = OxyColor.FromAColor(200, OxyColors.White),
                 LegendBorder = OxyColors.LightGray
             });
 
-            // --- Осі ---
+            //Осі
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "x" });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "y" });
 
-            // --- f(x) ---
+            //f(x)
             var seriesF = new LineSeries
             {
                 Title = "f(x)",
@@ -128,7 +128,7 @@ namespace RootFinderWpf
                 StrokeThickness = 2
             };
 
-            // --- g(x) ---
+            //g(x)
             var seriesG = new LineSeries
             {
                 Title = "g(x)",
@@ -136,7 +136,7 @@ namespace RootFinderWpf
                 StrokeThickness = 2
             };
 
-            // --- Додаємо точки ---
+            //Додаємо точки
             for (double x = xmin; x <= xmax + 1e-9; x += step)
             {
                 double fx = f.Evaluate(x);
@@ -149,11 +149,11 @@ namespace RootFinderWpf
             model.Series.Add(seriesF);
             model.Series.Add(seriesG);
 
-            // --- Root points ---
+            //Root points
             var rootSeries = new ScatterSeries
             {
                 Title = "root",
-                MarkerType = MarkerType.Circle,   // КРУГ
+                MarkerType = MarkerType.Circle,
                 MarkerSize = 6,
                 MarkerFill = OxyColors.Black
             };
