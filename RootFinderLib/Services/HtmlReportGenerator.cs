@@ -13,13 +13,14 @@ namespace RootFinderLib.Services
 
             sb.AppendLine("<html><head><meta charset='UTF-8'><title>Report</title>");
             sb.AppendLine("<style>");
+            sb.AppendLine("h2 { color: #4A90E2; }");
             sb.AppendLine("table { border-collapse: collapse; width: 100%; }");
-            sb.AppendLine("th, td { border: 1px solid #444; padding: 8px; text-align: center; }");
-            sb.AppendLine("th { background-color: #f0f0f0; font-weight: bold; }");
+            sb.AppendLine("th, td { border: 1px solid #4A90E2; padding: 8px; text-align: center; }");
+            sb.AppendLine("th { background-color: #4A90E2; color: white; font-weight: bold; }");
             sb.AppendLine("</style>");
             sb.AppendLine("</head><body>");
 
-            sb.AppendLine("<h2>Root Finder — Chord Method Report</h2>");
+            sb.AppendLine("<h2>Root Finder - Chord Method Report f(𝑥) = g(𝑥)</h2>");
             sb.AppendLine(htmlBody);
 
             sb.AppendLine("</body></html>");

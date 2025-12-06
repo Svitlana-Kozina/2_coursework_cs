@@ -185,6 +185,24 @@ namespace RootFinderWpf
 
             model.Series.Add(rootSeries);
 
+            // --- Root labels ---
+            foreach (double root in roots)
+            {
+                var label = new OxyPlot.Annotations.TextAnnotation
+                {
+                    Text = root.ToString("F3"),
+                    TextPosition = new DataPoint(root, f.Evaluate(root)),
+                    Offset = new ScreenVector(5, -5),
+                    TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Left,
+                    TextVerticalAlignment = OxyPlot.VerticalAlignment.Bottom,
+                    Stroke = OxyColors.Undefined,
+                    FontSize = 14,
+                    TextColor = OxyColors.Black
+                };
+
+                model.Annotations.Add(label);
+            }
+
             Plot.Model = model;
         }
 
