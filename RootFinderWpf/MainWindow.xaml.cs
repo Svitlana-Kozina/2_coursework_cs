@@ -1,27 +1,28 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Windows;
-using Microsoft.Win32;
-using OxyPlot;
-using OxyPlot.Axes;
-using OxyPlot.Legends;
-using OxyPlot.Series;
-using OxyPlot.SkiaSharp;
-using SkiaSharp;
-using RootFinderLib.Models;
-using RootFinderLib.Services;
-using RootFinderWpf.Models;
 using System.Windows.Controls;
 using System.Windows.Data;
+using Microsoft.Win32;
+
+using RootFinderLib.Models;
+using RootFinderLib.Services;
+
+using RootFinderWpf.Models;
+using RootFinderWpf.Plotting;
+using RootFinderWpf.Validation;
+using RootFinderWpf.IO;
+
+using OxyPlot;
 
 namespace RootFinderWpf
 {
     public partial class MainWindow : Window
     {
-        // Колекція точок g(x)
         public ObservableCollection<PointInput> Points { get; set; } = new();
+
+        private readonly PlotBuilder _plotBuilder = new PlotBuilder();
 
         public MainWindow()
         {
@@ -29,14 +30,13 @@ namespace RootFinderWpf
 
             PointsGrid.ItemsSource = Points;
 
-            //f(x) = x^3 - 4x
+            // Default UI values
             TxtPolynomial.Text = "1 0 -4 0";
             TxtXMin.Text = "-3";
             TxtXMax.Text = "3";
             TxtStep.Text = "0.1";
             TxtEps.Text = "0.0001";
 
-            // g(x) points default
             Points.Add(new PointInput { X = -3, Y = 0 });
             Points.Add(new PointInput { X = 0, Y = 0 });
             Points.Add(new PointInput { X = 3, Y = 0 });
@@ -44,73 +44,65 @@ namespace RootFinderWpf
             RootsList.Items.Add("Enter data and press 'Find roots'");
         }
 
+
+        // ============================================================
+        //  VALIDATION: POINT EDITING
+        // ============================================================
+
         private void PointsGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.EditAction != DataGridEditAction.Commit)
                 return;
 
-            TextBox tb = e.EditingElement as TextBox;
-            if (tb == null)
+            if (e.EditingElement is not TextBox tb)
                 return;
 
             string text = tb.Text.Trim();
 
-            // Порожнє значення дозволяється
+            // Allow empty cell
             if (string.IsNullOrWhiteSpace(text))
                 return;
 
-            // Перевірка на число
-            if (!double.TryParse(text, out double value))
+            // --- numeric check ---
+            if (!InputValidator.TryValidateNumber(text, out double value))
             {
-                MessageBox.Show(
-                    "Enter a valid numeric value.",
-                    "Input error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                MessageBox.Show("Enter a valid numeric value.",
+                    "Input error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 tb.Text = "";
                 e.Cancel = true;
                 return;
             }
 
-            // ------------------------------------------
-            //        ПЕРЕВІРКА ДУБЛЮВАННЯ X
-            // ------------------------------------------
+            // --- unique X check ---
             var column = e.Column as DataGridBoundColumn;
             var binding = column?.Binding as Binding;
 
-            if (binding != null && binding.Path != null && binding.Path.Path == "X")
+            if (binding != null && binding.Path.Path == "X")
             {
                 var editedPoint = e.Row.Item as PointInput;
 
-                bool duplicate = Points.Any(p => p != editedPoint && p.X == value);
-
-                if (duplicate)
+                if (InputValidator.IsDuplicateX(Points, editedPoint, value))
                 {
                     MessageBox.Show(
                         "The X values must be unique.\nDuplicate X detected.",
-                        "Input error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
+                        "Input error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                     tb.Text = "";
                     e.Cancel = true;
-                    return;
                 }
             }
         }
-        private void BtnClear_Click(object sender, RoutedEventArgs e)
-        {
-            RootsList.Items.Clear();
-            Points.Clear();
-            Plot.Model = null;
-        }
+
+
+        // ============================================================
+        //  MAIN BUTTON: FIND ROOTS
+        // ============================================================
 
         private void BtnFindRoots_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                //Поліном
                 double[] coeffs = TxtPolynomial.Text
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries)
                     .Select(double.Parse)
@@ -118,7 +110,6 @@ namespace RootFinderWpf
 
                 var f = new PolynomialFunction(coeffs.ToList());
 
-                //g(x) точки
                 if (Points.Count < 2)
                 {
                     MessageBox.Show("Please enter at least 2 points for g(x).",
@@ -130,27 +121,21 @@ namespace RootFinderWpf
                     Points.Select(p => (p.X, p.Y)).ToList()
                 );
 
-                //Інтервал
                 double xmin = double.Parse(TxtXMin.Text);
                 double xmax = double.Parse(TxtXMax.Text);
                 double step = double.Parse(TxtStep.Text);
                 double eps = double.Parse(TxtEps.Text);
 
-                //Пошук коренів
                 var roots = RootSearchService.FindAllRoots(f, g, xmin, xmax, step, eps);
 
                 RootsList.Items.Clear();
                 if (roots.Count == 0)
-                {
                     RootsList.Items.Add("No roots found.");
-                }
                 else
-                {
                     foreach (var r in roots)
                         RootsList.Items.Add(r.ToString("F6"));
-                }
 
-                DrawPlot(f, g, xmin, xmax, step, roots);
+                Plot.Model = _plotBuilder.BuildPlot(f, g, xmin, xmax, step, roots);
             }
             catch (Exception ex)
             {
@@ -159,254 +144,185 @@ namespace RootFinderWpf
             }
         }
 
-        private void DrawPlot(FunctionBase f, FunctionBase g, double xmin, double xmax, double step,
-                              System.Collections.Generic.List<double> roots)
+
+        // ============================================================
+        //  MENU: CLEAR
+        // ============================================================
+
+        private void BtnClear_Click(object sender, RoutedEventArgs e)
         {
-            var model = new PlotModel 
-            {
-                Title = "Functions and Roots f(x) = g(x)",
-                Background = OxyColors.White,   // Додаємо білий фон
-                Padding = new OxyThickness(45, 57, 82, 10)
-            };
-
-            //Легенда
-            model.Legends.Add(new Legend
-            {
-                LegendPlacement = LegendPlacement.Outside,
-                LegendPosition = LegendPosition.BottomCenter,   
-                LegendOrientation = LegendOrientation.Horizontal,
-                LegendBackground = OxyColor.FromAColor(200, OxyColors.White),
-                LegendBorder = OxyColors.LightGray
-            });
-
-            //Осі
-            //model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "x" });
-            //model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "y" });
-
-            model.Axes.Add(new LinearAxis
-            {
-                Position = AxisPosition.Bottom,
-                Title = "x",
-                MajorGridlineStyle = LineStyle.Solid,
-                MajorGridlineColor = OxyColor.FromRgb(220, 220, 220),
-                MinorGridlineStyle = LineStyle.Dot,
-                MinorGridlineColor = OxyColor.FromRgb(235, 235, 235)
-            });
-
-            model.Axes.Add(new LinearAxis
-            {
-                Position = AxisPosition.Left,
-                Title = "y",
-                MajorGridlineStyle = LineStyle.Solid,
-                MajorGridlineColor = OxyColor.FromRgb(220, 220, 220),
-                MinorGridlineStyle = LineStyle.Dot,
-                MinorGridlineColor = OxyColor.FromRgb(235, 235, 235)
-            });
-
-            //f(x)
-            var seriesF = new LineSeries
-            {
-                Title = "f(x)",
-                Color = OxyColor.FromRgb(74, 144, 226), // Блакитний
-                StrokeThickness = 2
-            };
-
-            //g(x)
-            var seriesG = new LineSeries
-            {
-                Title = "g(x)",
-                Color = OxyColor.FromRgb(0, 170, 0), // Зелений
-                StrokeThickness = 2
-            };
-
-            //Додаємо точки
-            for (double x = xmin; x <= xmax + 1e-9; x += step)
-            {
-                double fx = f.Evaluate(x);
-                double gx = g.Evaluate(x);
-
-                seriesF.Points.Add(new DataPoint(x, fx));
-                seriesG.Points.Add(new DataPoint(x, gx));
-            }
-
-            model.Series.Add(seriesF);
-            model.Series.Add(seriesG);
-
-            //Root points
-            var rootSeries = new ScatterSeries
-            {
-                Title = "root",
-                MarkerType = MarkerType.Circle,
-                MarkerSize = 6,
-                MarkerFill = OxyColors.Black
-            };
-
-            foreach (double root in roots)
-            {
-                rootSeries.Points.Add(new ScatterPoint(root, f.Evaluate(root)));
-            }
-
-            model.Series.Add(rootSeries);
-
-            // --- Root labels ---
-            foreach (double root in roots)
-            {
-                var label = new OxyPlot.Annotations.TextAnnotation
-                {
-                    Text = root.ToString("F3"),
-                    TextPosition = new DataPoint(root, f.Evaluate(root)),
-                    Offset = new ScreenVector(5, -5),
-                    TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Left,
-                    TextVerticalAlignment = OxyPlot.VerticalAlignment.Bottom,
-                    Stroke = OxyColors.Undefined,
-                    FontSize = 14,
-                    TextColor = OxyColors.Black
-                };
-
-                model.Annotations.Add(label);
-            }
-
-            Plot.Model = model;
+            RootsList.Items.Clear();
+            Points.Clear();
+            Plot.Model = null;
         }
 
-            private void Menu_LoadXml_Click(object sender, RoutedEventArgs e)
+
+        // ============================================================
+        //  MENU: LOAD XML
+        // ============================================================
+
+        private void Menu_LoadXml_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
             {
-                var dlg = new OpenFileDialog
+                Filter = "XML Files (*.xml)|*.xml",
+                Title = "Load data from XML"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                try
                 {
-                    Filter = "XML Files (*.xml)|*.xml",
-                    Title = "Load data from XML"
-                };
+                    var data = XmlDataService.Load(dlg.FileName);
 
-                if (dlg.ShowDialog() == true)
+                    TxtPolynomial.Text = string.Join(" ", data.FxCoefficients);
+                    TxtXMin.Text = data.X0.ToString();
+                    TxtXMax.Text = data.X1.ToString();
+                    TxtEps.Text = data.Epsilon.ToString();
+
+                    Points.Clear();
+                    foreach (var p in data.GxPoints)
+                        Points.Add(new PointInput { X = p.X, Y = p.Y });
+
+                    MessageBox.Show("XML successfully loaded.",
+                        "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        var data = XmlDataService.Load(dlg.FileName);
-
-                        // Підставляємо дані у UI
-                        TxtPolynomial.Text = string.Join(" ", data.FxCoefficients);
-                        TxtXMin.Text = data.X0.ToString();
-                        TxtXMax.Text = data.X1.ToString();
-                        TxtEps.Text = data.Epsilon.ToString();
-
-                        Points.Clear();
-                        foreach (var p in data.GxPoints)
-                            Points.Add(new PointInput { X = p.X, Y = p.Y });
-
-                        MessageBox.Show("XML successfully loaded.", "Success",
-                                        MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error loading XML:\n" + ex.Message,
-                                        "XML Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    MessageBox.Show($"Error loading XML:\n{ex.Message}",
+                        "XML Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            private void Menu_SaveXml_Click(object sender, RoutedEventArgs e)
+        }
+
+
+        // ============================================================
+        //  MENU: SAVE XML
+        // ============================================================
+
+        private void Menu_SaveXml_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog
             {
-                var dlg = new SaveFileDialog
+                Filter = "XML Files (*.xml)|*.xml",
+                Title = "Save data to XML"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                try
                 {
-                    Filter = "XML Files (*.xml)|*.xml",
-                    Title = "Save data to XML"
-                };
+                    var data = new DataSet
+                    {
+                        FxString = TxtPolynomial.Text,
+                        FxCoefficients = TxtPolynomial.Text.Split().Select(double.Parse).ToList(),
+                        GxPoints = Points.Select(p => (p.X, p.Y)).ToList(),
+                        X0 = double.Parse(TxtXMin.Text),
+                        X1 = double.Parse(TxtXMax.Text),
+                        Epsilon = double.Parse(TxtEps.Text)
+                    };
 
-                if (dlg.ShowDialog() == true)
+                    XmlDataService.Save(data, dlg.FileName);
+
+                    MessageBox.Show("XML successfully saved.",
+                        "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        var data = new DataSet
-                        {
-                            FxString = TxtPolynomial.Text,
-                            FxCoefficients = TxtPolynomial.Text.Split().Select(double.Parse).ToList(),
-                            GxPoints = Points.Select(p => (p.X, p.Y)).ToList(),
-                            X0 = double.Parse(TxtXMin.Text),
-                            X1 = double.Parse(TxtXMax.Text),
-                            Epsilon = double.Parse(TxtEps.Text)
-                        };
-
-                        XmlDataService.Save(data, dlg.FileName);
-
-                        MessageBox.Show("XML successfully saved.", "Success",
-                                        MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error saving XML:\n" + ex.Message,
-                                        "XML Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    MessageBox.Show($"Error saving XML:\n{ex.Message}",
+                        "XML Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            private void Menu_SaveHtml_Click(object sender, RoutedEventArgs e)
+        }
+
+
+        // ============================================================
+        //  MENU: SAVE HTML REPORT
+        // ============================================================
+
+        private void Menu_SaveHtml_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog
             {
-                var dlg = new SaveFileDialog
+                Filter = "HTML File (*.html)|*.html",
+                Title = "Save HTML report"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                try
                 {
-                    Filter = "HTML File (*.html)|*.html",
-                    Title = "Save HTML report"
-                };
+                    HtmlReportService.Save(
+                        dlg.FileName,
+                        TxtPolynomial.Text,
+                        TxtXMin.Text,
+                        TxtXMax.Text,
+                        TxtEps.Text,
+                        Points,
+                        RootsList.Items.Cast<string>()
+                    );
 
-                if (dlg.ShowDialog() == true)
+                    MessageBox.Show("HTML report saved.",
+                        "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        string htmlBody =
-                            $"<p><b>Polynomial:</b> {TxtPolynomial.Text}</p>" +
-                            $"<p><b>Interval:</b> [{TxtXMin.Text}; {TxtXMax.Text}]</p>" +
-                            $"<p><b>Epsilon:</b> {TxtEps.Text}</p>" +
-                            "<h3>g(x) points</h3>" +
-                            "<table><tr><th>X</th><th>Y</th></tr>" +
-                            string.Join("", Points.Select(p =>
-                                $"<tr><td>{p.X}</td><td>{p.Y}</td></tr>")) +
-                            "</table>" +
-                            "<h3>Roots</h3>" +
-                            string.Join("<br>", RootsList.Items.Cast<string>());
-
-                        HtmlReportGenerator.Generate(dlg.FileName, htmlBody);
-
-                        MessageBox.Show("HTML report saved.", "Success",
-                                        MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error saving report:\n" + ex.Message,
-                                        "HTML Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    MessageBox.Show($"Error saving report:\n{ex.Message}",
+                        "HTML Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            private void Menu_HelpGuide_Click(object sender, RoutedEventArgs e)
-            {
-                MessageBox.Show(
-                    "1. Enter polynomial coefficients.\n" +
-                    "2. Enter interval xmin, xmax.\n" +
-                    "3. Enter g(x) points.\n" +
-                    "4. Click 'Find roots'.\n" +
-                    "5. Save/Load XML from File menu.\n" +
-                    "6. Generate report in Reports menu.",
-                    "User Guide",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            private void Menu_HelpAbout_Click(object sender, RoutedEventArgs e)
-            {
-                MessageBox.Show("Root Finder — Chord Method\nVersion 1.0\nCreated by Kozina Svitlana Oleksandrivna",
-                    "About",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            private void Menu_HelpSupport_Click(object sender, RoutedEventArgs e)
-            {
-                MessageBox.Show("Support e-mail: skozina.webdev@gmail.com",
-                    "Support",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            private void Menu_Exit_Click(object sender, RoutedEventArgs e)
-            {
-                Close();
-            }
+        }
+
+
+        // ============================================================
+        //  MENU: HELP
+        // ============================================================
+
+        private void Menu_HelpGuide_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(
+                "1. Enter polynomial coefficients.\n" +
+                "2. Enter interval xmin, xmax.\n" +
+                "3. Enter g(x) points.\n" +
+                "4. Click 'Find roots'.\n" +
+                "5. Save/Load XML from File menu.\n" +
+                "6. Generate report in Reports menu.",
+                "User Guide", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void Menu_HelpAbout_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Root Finder — Chord Method\nVersion 1.0\nCreated by Kozina Svitlana Oleksandrivna",
+                "About", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void Menu_HelpSupport_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Support e-mail: skozina.webdev@gmail.com",
+                "Support", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+
+        // ============================================================
+        //  MENU: EXIT
+        // ============================================================
+
+        private void Menu_Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+
+        // ============================================================
+        //  MENU: SAVE PNG / SVG
+        // ============================================================
+
         private void Menu_SavePlotPng_Click(object sender, RoutedEventArgs e)
         {
             if (Plot.Model == null)
             {
                 MessageBox.Show("Plot is empty. Generate the plot first.",
-                                "No plot", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    "No plot", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -420,31 +336,28 @@ namespace RootFinderWpf
             {
                 try
                 {
-                    // Створюємо PNG рендерер
-                    var exporter = new OxyPlot.SkiaSharp.PngExporter
-                    {
-                        Width = 1200,
-                        Height = 800
-                    };
+                    PlotExportService.SavePng(Plot.Model, dlg.FileName);
 
-                    // Зберігаємо файл
-                    using (var stream = File.OpenWrite(dlg.FileName))
-                    {
-                        exporter.Export(Plot.Model, stream);
-                    }
-
-                    MessageBox.Show("Plot saved successfully!", "Success",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Plot saved successfully!",
+                        "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error saving plot:\n" + ex.Message,
+                    MessageBox.Show($"Error saving plot:\n{ex.Message}",
                         "PNG Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
+
         private void Menu_SaveSvg_Click(object sender, RoutedEventArgs e)
         {
+            if (Plot.Model == null)
+            {
+                MessageBox.Show("Plot is empty. Generate the plot first.",
+                    "No plot", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             var dlg = new SaveFileDialog
             {
                 Filter = "SVG Image (*.svg)|*.svg",
@@ -455,29 +368,17 @@ namespace RootFinderWpf
             {
                 try
                 {
-                    var exporter = new OxyPlot.SkiaSharp.SvgExporter
-                    {
-                        Width = 1000,
-                        Height = 700
-                    };
-
-                    using (var stream = File.Create(dlg.FileName))
-                    {
-                        exporter.Export(Plot.Model, stream);
-                    }
+                    PlotExportService.SaveSvg(Plot.Model, dlg.FileName);
 
                     MessageBox.Show("SVG file saved successfully.",
                         "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error saving SVG:\n" + ex.Message,
+                    MessageBox.Show($"Error saving SVG:\n{ex.Message}",
                         "SVG Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
-
-
-
     }
 }
