@@ -10,7 +10,7 @@ namespace ConsoleApp.Tests
         {
             string[] testFiles =
             {
-                "test_multi_root.xml", "test_one_root.xml", "test_no_roots.xml"
+                "test_multi_root.xml", "test_one_root.xml", "test_no_roots.xml", "test_multi_root_3r.xml"
             };
 
             Console.WriteLine("\n=== Running XML Tests ==================================================================================\n");
