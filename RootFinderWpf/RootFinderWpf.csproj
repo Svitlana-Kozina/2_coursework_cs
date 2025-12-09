@@ -18,8 +18,4 @@
     <ProjectReference Include="..\RootFinderLib\RootFinderLib.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>

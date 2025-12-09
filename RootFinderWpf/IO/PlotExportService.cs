@@ -5,10 +5,7 @@ using OxyPlot.SkiaSharp;
 namespace RootFinderWpf.IO
 {
     public static class PlotExportService
-    {
-        // ============================================
-        //   SAVE PNG WITH WHITE BACKGROUND
-        // ============================================
+    {        
         public static void SavePng(PlotModel model, string filePath)
         {
             // Білий фон моделі
@@ -27,9 +24,6 @@ namespace RootFinderWpf.IO
             }
         }
 
-        // ============================================
-        //   SAVE SVG
-        // ============================================
         public static void SaveSvg(PlotModel model, string filePath)
         {
             // Явно вказуємо SVG експортер з SkiaSharp

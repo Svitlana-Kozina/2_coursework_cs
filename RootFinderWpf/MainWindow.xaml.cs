@@ -44,11 +44,6 @@ namespace RootFinderWpf
             RootsList.Items.Add("Enter data and press 'Find roots'");
         }
 
-
-        // ============================================================
-        //  VALIDATION: POINT EDITING
-        // ============================================================
-
         private void PointsGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.EditAction != DataGridEditAction.Commit)
@@ -94,10 +89,7 @@ namespace RootFinderWpf
             }
         }
 
-
-        // ============================================================
-        //  MAIN BUTTON: FIND ROOTS
-        // ============================================================
+              
 
         private void BtnFindRoots_Click(object sender, RoutedEventArgs e)
         {
@@ -144,22 +136,13 @@ namespace RootFinderWpf
             }
         }
 
-
-        // ============================================================
-        //  MENU: CLEAR
-        // ============================================================
-
+                
         private void BtnClear_Click(object sender, RoutedEventArgs e)
         {
             RootsList.Items.Clear();
             Points.Clear();
             Plot.Model = null;
         }
-
-
-        // ============================================================
-        //  MENU: LOAD XML
-        // ============================================================
 
         private void Menu_LoadXml_Click(object sender, RoutedEventArgs e)
         {
@@ -195,11 +178,7 @@ namespace RootFinderWpf
             }
         }
 
-
-        // ============================================================
-        //  MENU: SAVE XML
-        // ============================================================
-
+               
         private void Menu_SaveXml_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SaveFileDialog
@@ -236,10 +215,6 @@ namespace RootFinderWpf
         }
 
 
-        // ============================================================
-        //  MENU: SAVE HTML REPORT
-        // ============================================================
-
         private void Menu_SaveHtml_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SaveFileDialog
@@ -274,10 +249,6 @@ namespace RootFinderWpf
         }
 
 
-        // ============================================================
-        //  MENU: HELP
-        // ============================================================
-
         private void Menu_HelpGuide_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(
@@ -303,19 +274,10 @@ namespace RootFinderWpf
         }
 
 
-        // ============================================================
-        //  MENU: EXIT
-        // ============================================================
-
         private void Menu_Exit_Click(object sender, RoutedEventArgs e)
         {
             Close();
         }
-
-
-        // ============================================================
-        //  MENU: SAVE PNG / SVG
-        // ============================================================
 
         private void Menu_SavePlotPng_Click(object sender, RoutedEventArgs e)
         {
