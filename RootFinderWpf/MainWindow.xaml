@@ -119,6 +119,8 @@
                         <TextBlock Text="g(x) points:" FontWeight="Bold"/>
                         <DataGrid x:Name="PointsGrid"
                                   AutoGenerateColumns="False"
+                                  ItemsSource="{Binding Points}"
+                                  CellEditEnding="PointsGrid_CellEditEnding"
                                   CanUserAddRows="True"
                                   CanUserDeleteRows="True"
                                   HeadersVisibility="Column"

@@ -13,6 +13,8 @@ using SkiaSharp;
 using RootFinderLib.Models;
 using RootFinderLib.Services;
 using RootFinderWpf.Models;
+using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace RootFinderWpf
 {
@@ -42,6 +44,61 @@ namespace RootFinderWpf
             RootsList.Items.Add("Enter data and press 'Find roots'");
         }
 
+        private void PointsGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit)
+                return;
+
+            TextBox tb = e.EditingElement as TextBox;
+            if (tb == null)
+                return;
+
+            string text = tb.Text.Trim();
+
+            // Порожнє значення дозволяється
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+
+            // Перевірка на число
+            if (!double.TryParse(text, out double value))
+            {
+                MessageBox.Show(
+                    "Enter a valid numeric value.",
+                    "Input error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                tb.Text = "";
+                e.Cancel = true;
+                return;
+            }
+
+            // ------------------------------------------
+            //        ПЕРЕВІРКА ДУБЛЮВАННЯ X
+            // ------------------------------------------
+            var column = e.Column as DataGridBoundColumn;
+            var binding = column?.Binding as Binding;
+
+            if (binding != null && binding.Path != null && binding.Path.Path == "X")
+            {
+                var editedPoint = e.Row.Item as PointInput;
+
+                bool duplicate = Points.Any(p => p != editedPoint && p.X == value);
+
+                if (duplicate)
+                {
+                    MessageBox.Show(
+                        "The X values must be unique.\nDuplicate X detected.",
+                        "Input error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    tb.Text = "";
+                    e.Cancel = true;
+                    return;
+                }
+            }
+        }
         private void BtnClear_Click(object sender, RoutedEventArgs e)
         {
             RootsList.Items.Clear();
@@ -105,7 +162,12 @@ namespace RootFinderWpf
         private void DrawPlot(FunctionBase f, FunctionBase g, double xmin, double xmax, double step,
                               System.Collections.Generic.List<double> roots)
         {
-            var model = new PlotModel { Title = "Functions and Roots f(x) = g(x)" };
+            var model = new PlotModel 
+            {
+                Title = "Functions and Roots f(x) = g(x)",
+                Background = OxyColors.White,   // Додаємо білий фон
+                Padding = new OxyThickness(45, 57, 82, 10)
+            };
 
             //Легенда
             model.Legends.Add(new Legend
