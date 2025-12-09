@@ -27,7 +27,8 @@ namespace RootFinderWpf
 
             PointsGrid.ItemsSource = Points;
 
-            TxtPolynomial.Text = "1 0 -4";
+            //f(x) = x^3 - 4x
+            TxtPolynomial.Text = "1 0 -4 0";
             TxtXMin.Text = "-3";
             TxtXMax.Text = "3";
             TxtStep.Text = "0.1";
